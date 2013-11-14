@@ -2,6 +2,6 @@
 
 #include <mpi.h>
 
-void abort(int err) {
+void mpiAbort(int err) {
   MPI_Abort(MPI_COMM_WORLD, err);
 }

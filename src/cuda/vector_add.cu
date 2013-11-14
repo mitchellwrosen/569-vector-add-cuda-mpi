@@ -1,6 +1,11 @@
 #include "cuda/vector_add.h"
 
+#include <iostream>
+
 #include "cuda/utils.h"
+#include "mpi/utils.h"
+
+__global__ void vectorAdd(float *Md, float *Nd, float *Pd, int width);
 
 void cudaVectorAdd(float* chunk1, float* chunk2, float* chunkSum, int floatsPerNode) {
   float *gpuChunk1, *gpuChunk2, *gpuChunkSum;
@@ -11,7 +16,7 @@ void cudaVectorAdd(float* chunk1, float* chunk2, float* chunkSum, int floatsPerN
   CUDA_CHECK(cudaMemcpy(gpuChunk1, chunk1, floatsPerNode * sizeof(float), cudaMemcpyHostToDevice));
   CUDA_CHECK(cudaMemcpy(gpuChunk2, chunk2, floatsPerNode * sizeof(float), cudaMemcpyHostToDevice));
 
-  vectorAdd<<<floatsPerNode>>>(gpuChunk1, gpuChunk2, gpuChunkSum, floatsPerNode);
+  vectorAdd<<<floatsPerNode,1>>>(gpuChunk1, gpuChunk2, gpuChunkSum, floatsPerNode);
 
   CUDA_CHECK(cudaMemcpy(chunkSum, gpuChunkSum, floatsPerNode * sizeof(float), cudaMemcpyDeviceToHost));
 

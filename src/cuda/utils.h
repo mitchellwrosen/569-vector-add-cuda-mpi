@@ -5,7 +5,6 @@
   if ((call) != cudaSuccess) { \
     cudaError_t err = cudaGetLastError(); \
     std::cerr << "CUDA error calling \""#call"\", code is " << err << std::endl; \
-    abort(err); \
-  }
+    mpiAbort(err); }
 
 #endif  // SRC_CUDA_UTILS_H_

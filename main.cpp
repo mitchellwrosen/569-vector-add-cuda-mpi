@@ -20,12 +20,12 @@ int main(int argc, char** argv) {
   FloatVector* vec1 = FloatVector::fromFile(context, argv[1]);
   FloatVector* vec2 = FloatVector::fromFile(context, argv[2]);
   if (!vec1 || !vec2)
-    abort(-1);
+    mpiAbort(-1);
 
   FloatVector* vec3 = FloatVector::sum(context, vec1, vec2);
   if (context.isRoot()) {
     if (!vec3)
-      abort(-1);
+      mpiAbort(-1);
     vec3->debugPrint();
   }
 
@@ -36,5 +36,5 @@ int main(int argc, char** argv) {
 
 void printUsage() {
   fprintf(stderr, "Usage: ./main file1 file2\n");
-  abort(-1);
+  exit(EXIT_FAILURE);
 }

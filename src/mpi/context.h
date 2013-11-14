@@ -6,6 +6,7 @@ class MpiContext {
   MpiContext(int* argc, char*** argv);
 
   bool isRoot() const;
+  void finalize();
 
   int size;
   int rank;

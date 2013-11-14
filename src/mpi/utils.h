@@ -4,9 +4,9 @@
 #define MPI_CHECK(call) \
   if ((call) != MPI_SUCCESS) { \
     std::cerr << "MPI error calling \""#call"\"\n"; \
-    abort(); MPI_Abort(MPI_COMM_WORLD, -1); \
+    abort(-1); \
   }
 
-void abort();
+void abort(int err);
 
 #endif  // SRC_MPI_UTILS_H_

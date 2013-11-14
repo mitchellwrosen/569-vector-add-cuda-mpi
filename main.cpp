@@ -3,9 +3,9 @@
 #include <mpi.h>
 #include <vector>
 
-#include "decoder.h"
-#include "mpi_utils.h"
-#include "vector_utils.h"
+#include "float_vector.h"
+#include "mpi/context.h"
+#include "mpi/utils.h"
 
 using namespace std;
 
@@ -19,13 +19,22 @@ int main(int argc, char** argv) {
 
   FloatVector* vec1 = FloatVector::fromFile(context, argv[1]);
   FloatVector* vec2 = FloatVector::fromFile(context, argv[2]);
-  FloatVector* vec3 = FloatVector::sum(context, vec1, vec2);
+  if (!vec1 || !vec2)
+    abort(-1);
 
-  if (!vec1 || !vec2 || !vec3)
-    abort();
+  FloatVector* vec3 = FloatVector::sum(context, vec1, vec2);
+  if (context.isRoot()) {
+    if (!vec3)
+      abort(-1);
+    vec3->debugPrint();
+  }
+
+  context.finalize();
+  return 0;
+
 }
 
 void printUsage() {
   fprintf(stderr, "Usage: ./main file1 file2\n");
-  abort();
+  abort(-1);
 }

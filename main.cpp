@@ -24,14 +24,11 @@ int main(int argc, char** argv) {
 
   FloatVector* vec3 = FloatVector::sum(context, vec1, vec2);
   if (context.isRoot()) {
-    if (!vec3)
-      mpiAbort(-1);
     vec3->debugPrint();
   }
 
   context.finalize();
   return 0;
-
 }
 
 void printUsage() {

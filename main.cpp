@@ -11,23 +11,27 @@ using namespace std;
 
 void printUsage();
 
+MpiContext* context;
+
 int main(int argc, char** argv) {
   if (argc != 3)
     printUsage();
 
-  MpiContext context(&argc, &argv);
+  context = new MpiContext(&argc, &argv, MPI_COMM_WORLD);
 
-  FloatVector* vec1 = FloatVector::fromFile(context, argv[1]);
-  FloatVector* vec2 = FloatVector::fromFile(context, argv[2]);
+  FloatVector* vec1 = FloatVector::fromFile(argv[1]);
+  FloatVector* vec2 = FloatVector::fromFile(argv[2]);
   if (!vec1 || !vec2)
     mpiAbort(-1);
 
-  FloatVector* vec3 = FloatVector::sum(context, vec1, vec2);
-  if (context.isRoot()) {
+  FloatVector* vec3 = FloatVector::sum(vec1, vec2);
+  if (context->isRoot()) {
     vec3->debugPrint();
   }
 
-  context.finalize();
+  context->finalize();
+
+  delete context;
   return 0;
 }
 

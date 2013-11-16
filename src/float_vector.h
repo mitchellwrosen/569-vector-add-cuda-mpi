@@ -1,6 +1,10 @@
 #ifndef SRC_FLOAT_VECTOR_H_
 #define SRC_FLOAT_VECTOR_H_
 
+#include <vector>
+
+using namespace std;
+
 class FloatVector {
  public:
   static FloatVector* fromFile(const char* filename);
@@ -15,16 +19,15 @@ class FloatVector {
 
   // Getters.
   const char* filename() const { return filename_; }
-  float* data() const { return data_; }
-  int len() const { return len_;  }
+  const float* data() const { return data_.data(); }
+  int len() const { return data_.size();  }
 
  private:
   FloatVector(const char* filename);
   FloatVector(float* data, int len);
 
   const char* filename_;
-  float* data_;
-  int len_;
+  vector<float> data_;
 };
 
 #endif  // SRC_FLOAT_VECTOR_H_

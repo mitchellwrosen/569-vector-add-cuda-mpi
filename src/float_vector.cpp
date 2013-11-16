@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <mpi.h>
+#include <vector>
 
 #include "cuda/vector_add.h"
 #include "mpi/context.h"
@@ -12,7 +13,19 @@ using namespace std;
 
 extern MpiContext* context;
 
-static float* getChunkSum(float* vec1, float* vec2, int floatsPerNode);
+FloatVector::FloatVector(const char* filename) : filename_(filename) {
+  if (context->isRoot()) {
+    ifstream infile(filename);
+
+    float n;
+    while (infile >> n)
+      data_.push_back(n);
+  }
+}
+
+FloatVector::FloatVector(float* data, int len) : filename_(NULL) {
+  data_.assign(data, data + len);
+}
 
 FloatVector* FloatVector::fromFile(const char* filename) {
   // TODO: Return NULL if bad filename or something.
@@ -20,7 +33,9 @@ FloatVector* FloatVector::fromFile(const char* filename) {
 }
 
 FloatVector* FloatVector::sum(const FloatVector* vec1, const FloatVector* vec2) {
+  int totalFloats;
   int floatsPerNode;
+
   if (context->isRoot()) {
     if (vec1->len() != vec2->len()) {
       fprintf(stderr, "Unequal vector lengths: %d (%s), %d (%s)\n",
@@ -33,7 +48,8 @@ FloatVector* FloatVector::sum(const FloatVector* vec1, const FloatVector* vec2) 
       mpiAbort(-1);
     }
 
-    floatsPerNode = vec1->len() / context->size;
+    totalFloats = vec1->len();
+    floatsPerNode = totalFloats / context->size;
   }
 
   MPI_CHECK(MPI_Bcast(&floatsPerNode, sizeof(int), MPI_INT, 0, context->comm));
@@ -42,40 +58,25 @@ FloatVector* FloatVector::sum(const FloatVector* vec1, const FloatVector* vec2) 
   float* chunk2 = new float[floatsPerNode];
   float* chunkSum = new float[floatsPerNode];
 
-  MPI_CHECK(MPI_Scatter(vec1->data(), floatsPerNode, MPI_FLOAT, chunk1, floatsPerNode, MPI_FLOAT, 0, context->comm));
-  MPI_CHECK(MPI_Scatter(vec2->data(), floatsPerNode, MPI_FLOAT, chunk2, floatsPerNode, MPI_FLOAT, 0, context->comm));
+  MPI_CHECK(MPI_Scatter(const_cast<float*>(vec1->data()), floatsPerNode, MPI_FLOAT, chunk1, floatsPerNode, MPI_FLOAT, 0, context->comm));
+  MPI_CHECK(MPI_Scatter(const_cast<float*>(vec2->data()), floatsPerNode, MPI_FLOAT, chunk2, floatsPerNode, MPI_FLOAT, 0, context->comm));
 
   cudaVectorAdd(chunk1, chunk2, chunkSum, floatsPerNode);
 
   float* vectorSumData;
   if (context->isRoot())
-    vectorSumData = new float[vec1->len()];
+    vectorSumData = new float[totalFloats];
 
   MPI_CHECK(MPI_Gather(chunkSum, floatsPerNode, MPI_FLOAT, vectorSumData, floatsPerNode, MPI_FLOAT, 0, context->comm));
 
   if (context->isRoot())
-     return new FloatVector(vectorSumData, vec1->len());
+     return new FloatVector(vectorSumData, totalFloats);
   return NULL;
 }
 
 void FloatVector::debugPrint() {
-  cout << len_ << " floats." << endl;
-  for (int i = 0; i < len_; ++i)
-    cout << data_[i] << ' ';
+  cout << data_.size() << " floats." << endl;
+  for (vector<float>::const_iterator iter = data_.begin(); iter != data_.end(); ++iter)
+    cout << *iter << ' ';
   cout << endl;
-}
-
-FloatVector::FloatVector(const char* filename) : filename_(filename) {
-  if (context->isRoot()) {
-    ifstream infile(filename, ios::binary);
-
-    infile.read((char*) &len_, sizeof(int));
-    data_ = new float[len_];
-
-    for (int i = 0; i < len_; ++i)
-      infile.read((char*) (data_ + i), sizeof(float));
-  }
-}
-
-FloatVector::FloatVector(float* data, int len) : filename_(NULL), data_(data), len_(len) {
 }

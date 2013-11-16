@@ -1,6 +1,7 @@
 #include "float_vector.h"
 
 #include <boost/timer.hpp>
+#include <cstring>
 #include <iostream>
 #include <fstream>
 #include <mpi.h>
@@ -53,6 +54,30 @@ FloatVector* FloatVector::sum(const FloatVector* vec1, const FloatVector* vec2) 
   return new FloatVector(chunkSum, floatsPerNode);
 }
 
+int* FloatVector::histogram() {
+  int* localBins = new int[NUM_BINS];
+  memset(localBins, '\0', NUM_BINS * sizeof(int));
+
+  for (int i = 0; i < len_; ++i)
+    localBins[getBinNum(data_[i])]++;
+
+  int *histogram = NULL;
+  if (context->isRoot()) {
+    histogram = new int[NUM_BINS];
+    memset(histogram, '\0', NUM_BINS * sizeof(int));
+  }
+
+  MPI_CHECK(MPI_Reduce(localBins, histogram, NUM_BINS, MPI_INT, MPI_SUM, context->root, context->comm));
+  return histogram;
+}
+
+int FloatVector::getBinNum(float val) {
+   int binNum = (val - MIN_VAL) / BIN_WIDTH;
+   if (binNum == NUM_BINS)
+      binNum--;
+   return binNum;
+}
+
 void FloatVector::debugPrint() {
   int totalFloats = len_ * context->size;
 
@@ -60,7 +85,7 @@ void FloatVector::debugPrint() {
   if (context->isRoot())
     totalData = new float[totalFloats];
 
-  MPI_CHECK(MPI_Gather(data_, len_, MPI_FLOAT, totalData, len_, MPI_FLOAT, 0, context->comm));
+  MPI_CHECK(MPI_Gather(data_, len_, MPI_FLOAT, totalData, len_, MPI_FLOAT, context->root, context->comm));
 
   if (context->isRoot()) {
     cout << totalFloats << " floats." << endl;

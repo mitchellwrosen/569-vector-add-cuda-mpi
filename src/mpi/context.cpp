@@ -4,7 +4,7 @@
 
 #include "mpi/utils.h"
 
-MpiContext::MpiContext(int* argc, char*** argv, MPI_Comm comm) : comm(comm) {
+MpiContext::MpiContext(int* argc, char*** argv, int root, MPI_Comm comm) : root(root), comm(comm) {
   MPI_CHECK(MPI_Init(argc, argv));
 
   MPI_CHECK(MPI_Comm_size(comm, &size));
@@ -12,7 +12,7 @@ MpiContext::MpiContext(int* argc, char*** argv, MPI_Comm comm) : comm(comm) {
 }
 
 bool MpiContext::isRoot() const {
-  return rank == 0;
+  return rank == root;
 }
 
 void MpiContext::finalize() {

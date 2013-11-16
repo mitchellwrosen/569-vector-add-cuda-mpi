@@ -5,13 +5,14 @@
 
 class MpiContext {
  public:
-  MpiContext(int* argc, char*** argv, MPI_Comm comm);
+  MpiContext(int* argc, char*** argv, int root, MPI_Comm comm);
 
   bool isRoot() const;
   void finalize();
 
   int size;
   int rank;
+  int root;
   MPI_Comm comm;
 };
 

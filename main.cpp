@@ -1,6 +1,7 @@
 #include <boost/timer.hpp>
 #include <cstdio>
 #include <cstdlib>
+#include <iostream>
 #include <mpi.h>
 #include <vector>
 
@@ -20,7 +21,7 @@ int main(int argc, char** argv) {
 
   boost::timer timer;
 
-  context = new MpiContext(&argc, &argv, MPI_COMM_WORLD);
+  context = new MpiContext(&argc, &argv, 0, MPI_COMM_WORLD);
 
   FloatVector* vec1 = new FloatVector(argv[1]);
   fprintf(stderr, "Read %d floats onto node %d (%lf seconds)\n", vec1->len(), context->rank, timer.elapsed());
@@ -31,6 +32,11 @@ int main(int argc, char** argv) {
 
   FloatVector* vec3 = FloatVector::sum(vec1, vec2);
   vec3->debugPrint();
+
+  int* histogram = vec3->histogram();
+  for (int i = 0; i < NUM_BINS; ++i)
+    cout << histogram[i] << ' ';
+  cout << endl;
 
   context->finalize();
 

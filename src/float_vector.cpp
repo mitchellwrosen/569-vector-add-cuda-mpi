@@ -1,5 +1,6 @@
 #include "float_vector.h"
 
+#include <boost/timer.hpp>
 #include <iostream>
 #include <fstream>
 #include <mpi.h>
@@ -15,11 +16,16 @@ extern MpiContext* context;
 
 FloatVector::FloatVector(const char* filename) : filename_(filename) {
   if (context->isRoot()) {
+    cerr << "Reading " << filename << " on root node... ";
+    boost::timer timer;
+
     ifstream infile(filename);
 
     float n;
     while (infile >> n)
       data_.push_back(n);
+
+    cerr << timer.elapsed() << " seconds." << endl;
   }
 }
 
@@ -58,19 +64,34 @@ FloatVector* FloatVector::sum(const FloatVector* vec1, const FloatVector* vec2) 
   float* chunk2 = new float[floatsPerNode];
   float* chunkSum = new float[floatsPerNode];
 
+  boost::timer timer;
+  if (context->isRoot())
+     cerr << "Scattering " << floatsPerNode << " floats to each node... ";
+
   MPI_CHECK(MPI_Scatter(const_cast<float*>(vec1->data()), floatsPerNode, MPI_FLOAT, chunk1, floatsPerNode, MPI_FLOAT, 0, context->comm));
   MPI_CHECK(MPI_Scatter(const_cast<float*>(vec2->data()), floatsPerNode, MPI_FLOAT, chunk2, floatsPerNode, MPI_FLOAT, 0, context->comm));
+
+  if (context->isRoot()) {
+     cerr << timer.elapsed() << " seconds. " << endl << "Summing floats on GPU... ";
+     timer.restart();
+  }
 
   cudaVectorAdd(chunk1, chunk2, chunkSum, floatsPerNode);
 
   float* vectorSumData;
-  if (context->isRoot())
+  if (context->isRoot()) {
+    cerr << timer.elapsed() << "seconds." << endl;
     vectorSumData = new float[totalFloats];
+    cerr << "Gathering floats... ";
+    timer.restart();
+  }
 
   MPI_CHECK(MPI_Gather(chunkSum, floatsPerNode, MPI_FLOAT, vectorSumData, floatsPerNode, MPI_FLOAT, 0, context->comm));
 
-  if (context->isRoot())
-     return new FloatVector(vectorSumData, totalFloats);
+  if (context->isRoot()) {
+    cerr << timer.elapsed() << " seconds." << endl;
+    return new FloatVector(vectorSumData, totalFloats);
+  }
   return NULL;
 }
 

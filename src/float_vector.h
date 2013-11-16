@@ -3,7 +3,7 @@
 
 class FloatVector {
  public:
-  static FloatVector* fromFile(const char* filename);
+  FloatVector(const char* filename);
 
   /**
    * Sum two vectors (distributed & accelerated). Returns NULL on all processes except the root process.
@@ -19,7 +19,6 @@ class FloatVector {
   int len() const { return len_; }
 
  private:
-  FloatVector(const char* filename);
   FloatVector(float* data, int len);
 
   const char* filename_;

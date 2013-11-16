@@ -18,17 +18,19 @@ int main(int argc, char** argv) {
   if (argc != 3)
     printUsage();
 
+  boost::timer timer;
+
   context = new MpiContext(&argc, &argv, MPI_COMM_WORLD);
 
-  FloatVector* vec1 = FloatVector::fromFile(argv[1]);
-  FloatVector* vec2 = FloatVector::fromFile(argv[2]);
-  if (!vec1 || !vec2)
-    mpiAbort(-1);
+  FloatVector* vec1 = new FloatVector(argv[1]);
+  fprintf(stderr, "Read %d floats onto node %d (%lf seconds)\n", vec1->len(), context->rank, timer.elapsed());
+
+  timer.restart();
+  FloatVector* vec2 = new FloatVector(argv[2]);
+  fprintf(stderr, "Read %d floats onto node %d (%lf seconds)\n", vec2->len(), context->rank, timer.elapsed());
 
   FloatVector* vec3 = FloatVector::sum(vec1, vec2);
-  if (context->isRoot()) {
-    vec3->debugPrint();
-  }
+  vec3->debugPrint();
 
   context->finalize();
 

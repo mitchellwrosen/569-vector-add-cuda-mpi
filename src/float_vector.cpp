@@ -27,17 +27,12 @@ FloatVector::FloatVector(const char* filename) : filename_(filename) {
   len_ = totalLen / context->size;
   data_ = new float[len_];
 
-  infile.seekg(sizeof(int) + len_ * sizeof(float));
+  infile.seekg(sizeof(int) + len_ * sizeof(float) * context->rank);
   for (int i = 0; i < len_; ++i)
     infile.read((char*) (data_ + i), sizeof(float));
 }
 
 FloatVector::FloatVector(float* data, int len) : filename_(NULL), data_(data), len_(len) {
-}
-
-FloatVector* FloatVector::fromFile(const char* filename) {
-  // TODO: Return NULL if bad filename or something.
-  return new FloatVector(filename);
 }
 
 FloatVector* FloatVector::sum(const FloatVector* vec1, const FloatVector* vec2) {
@@ -51,22 +46,26 @@ FloatVector* FloatVector::sum(const FloatVector* vec1, const FloatVector* vec2) 
   int totalFloats = floatsPerNode * context->size;
 
   float* chunkSum = new float[floatsPerNode];
+  boost::timer timer;
   cudaVectorAdd(vec1->data(), vec2->data(), chunkSum, floatsPerNode);
+  fprintf(stderr, "Summed %d floats on node %d (%lf seconds)\n", floatsPerNode, context->rank, timer.elapsed());
 
-  float* vectorSumData;
-  if (context->isRoot())
-    vectorSumData = new float[totalFloats];
-
-  MPI_CHECK(MPI_Gather(chunkSum, floatsPerNode, MPI_FLOAT, vectorSumData, floatsPerNode, MPI_FLOAT, 0, context->comm));
-
-  if (context->isRoot())
-    return new FloatVector(vectorSumData, totalFloats);
-  return NULL;
+  return new FloatVector(chunkSum, floatsPerNode);
 }
 
 void FloatVector::debugPrint() {
-  cout << len_ << " floats." << endl;
-  for (int i = 0; i < len_; ++i)
-    cout << data_[i] << ' ';
-  cout << endl;
+  int totalFloats = len_ * context->size;
+
+  float* totalData;
+  if (context->isRoot())
+    totalData = new float[totalFloats];
+
+  MPI_CHECK(MPI_Gather(data_, len_, MPI_FLOAT, totalData, len_, MPI_FLOAT, 0, context->comm));
+
+  if (context->isRoot()) {
+    cout << totalFloats << " floats." << endl;
+    for (int i = 0; i < totalFloats; ++i)
+      cout << totalData[i] << ' ';
+    cout << endl;
+  }
 }

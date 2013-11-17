@@ -5,6 +5,8 @@
 #include "cuda/utils.h"
 #include "mpi/utils.h"
 
+#define THREADS_PER_BLOCK 512
+
 __global__ void vectorAdd(float *Md, float *Nd, float *Pd, int width);
 
 void cudaVectorAdd(float* chunk1, float* chunk2, float* chunkSum, int floatsPerNode) {
@@ -16,7 +18,12 @@ void cudaVectorAdd(float* chunk1, float* chunk2, float* chunkSum, int floatsPerN
   CUDA_CHECK(cudaMemcpy(gpuChunk1, chunk1, floatsPerNode * sizeof(float), cudaMemcpyHostToDevice));
   CUDA_CHECK(cudaMemcpy(gpuChunk2, chunk2, floatsPerNode * sizeof(float), cudaMemcpyHostToDevice));
 
-  vectorAdd<<<floatsPerNode,1>>>(gpuChunk1, gpuChunk2, gpuChunkSum, floatsPerNode);
+  int threadsPerBlock = THREADS_PER_BLOCK;
+  int blocksPerGrid = floatsPerNode / THREADS_PER_BLOCK;
+  if (floatsPerNode % THREADS_PER_BLOCK != 0)
+    blocksPerGrid++;
+
+  vectorAdd<<<blocksPerGrid,threadsPerBlock>>>(gpuChunk1, gpuChunk2, gpuChunkSum, floatsPerNode);
 
   CUDA_CHECK(cudaMemcpy(chunkSum, gpuChunkSum, floatsPerNode * sizeof(float), cudaMemcpyDeviceToHost));
 

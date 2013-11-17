@@ -1,6 +1,7 @@
 #include <boost/timer.hpp>
 #include <cstdio>
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <mpi.h>
 #include <vector>
@@ -24,19 +25,23 @@ int main(int argc, char** argv) {
   context = new MpiContext(&argc, &argv, 0, MPI_COMM_WORLD);
 
   FloatVector* vec1 = new FloatVector(argv[1]);
-  fprintf(stderr, "Read %d floats onto node %d (%lf seconds)\n", vec1->len(), context->rank, timer.elapsed());
+  fprintf(stderr, "Read %d floats from %s on node %d (%lf seconds)\n", vec1->len(), argv[1], context->rank, timer.elapsed());
 
   timer.restart();
   FloatVector* vec2 = new FloatVector(argv[2]);
-  fprintf(stderr, "Read %d floats onto node %d (%lf seconds)\n", vec2->len(), context->rank, timer.elapsed());
+  fprintf(stderr, "Read %d floats from %s on node %d (%lf seconds)\n", vec2->len(), argv[2], context->rank, timer.elapsed());
 
   FloatVector* vec3 = FloatVector::sum(vec1, vec2);
-  vec3->debugPrint();
+
+  delete vec1;
+  delete vec2;
 
   int* histogram = vec3->histogram();
-  for (int i = 0; i < NUM_BINS; ++i)
-    cout << histogram[i] << ' ';
-  cout << endl;
+  if (context->isRoot()) {
+    ofstream histogramFile("hist.c");
+    for (int i = 0; i < NUM_BINS; ++i)
+      histogramFile << histogram[i] << endl;
+  }
 
   context->finalize();
 

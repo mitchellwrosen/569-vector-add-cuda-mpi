@@ -27,12 +27,12 @@ encode:
 	ghc -O2 ./Encode.hs -o encode
 
 $(CUDA_OBJS): %.o : %.cu %.h
-	$(NVCC) $(INC) $(CUDA_INC) -c $< -o $@
+	$(NVCC) $(INC) $(CUDA_INC) -O3 -c $< -o $@
 
 $(OBJS): %.o : %.cpp %.h
 	$(CC) $(INC) $(CFLAGS) -c $< -o $@
 
-%.o: %.cpp
+%.o : %.cpp
 	$(CC) $(INC) $(CFLAGS) -c $< -o $@
 
 .PHONY: makeDirectories

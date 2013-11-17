@@ -36,6 +36,11 @@ FloatVector::FloatVector(const char* filename) : filename_(filename) {
 FloatVector::FloatVector(float* data, int len) : filename_(NULL), data_(data), len_(len) {
 }
 
+FloatVector::~FloatVector() {
+  if (data_)
+    delete[] data_;
+}
+
 FloatVector* FloatVector::sum(const FloatVector* vec1, const FloatVector* vec2) {
   if (vec1->len() != vec2->len()) {
     fprintf(stderr, "Unequal vector lengths: %d (%s), %d (%s)\n",
@@ -44,9 +49,8 @@ FloatVector* FloatVector::sum(const FloatVector* vec1, const FloatVector* vec2) 
   }
 
   int floatsPerNode = vec1->len();
-  int totalFloats = floatsPerNode * context->size;
-
   float* chunkSum = new float[floatsPerNode];
+
   boost::timer timer;
   cudaVectorAdd(vec1->data(), vec2->data(), chunkSum, floatsPerNode);
   fprintf(stderr, "Summed %d floats on node %d (%lf seconds)\n", floatsPerNode, context->rank, timer.elapsed());
@@ -55,30 +59,37 @@ FloatVector* FloatVector::sum(const FloatVector* vec1, const FloatVector* vec2) 
 }
 
 int* FloatVector::histogram() {
-  int* localBins = new int[NUM_BINS];
-  memset(localBins, '\0', NUM_BINS * sizeof(int));
+  int* localBins = new int[NUM_BINS]();
 
   for (int i = 0; i < len_; ++i)
     localBins[getBinNum(data_[i])]++;
 
   int *histogram = NULL;
-  if (context->isRoot()) {
-    histogram = new int[NUM_BINS];
-    memset(histogram, '\0', NUM_BINS * sizeof(int));
-  }
+  if (context->isRoot())
+    histogram = new int[NUM_BINS]();
 
   MPI_CHECK(MPI_Reduce(localBins, histogram, NUM_BINS, MPI_INT, MPI_SUM, context->root, context->comm));
+  delete[] localBins;
   return histogram;
 }
 
 int FloatVector::getBinNum(float val) {
-   int binNum = (val - MIN_VAL) / BIN_WIDTH;
-   if (binNum == NUM_BINS)
-      binNum--;
-   return binNum;
+  int binNum = (val - MIN_VAL) / BIN_WIDTH;
+  if (binNum == NUM_BINS)
+     binNum--;
+  return binNum;
 }
 
 void FloatVector::debugPrint() {
+  debugPrint(cout);
+}
+
+void FloatVector::debugPrint(const char* filename) {
+  ofstream outFile(filename);
+  debugPrint(outFile);
+}
+
+void FloatVector::debugPrint(ostream& stream) {
   int totalFloats = len_ * context->size;
 
   float* totalData;
@@ -88,9 +99,9 @@ void FloatVector::debugPrint() {
   MPI_CHECK(MPI_Gather(data_, len_, MPI_FLOAT, totalData, len_, MPI_FLOAT, context->root, context->comm));
 
   if (context->isRoot()) {
-    cout << totalFloats << " floats." << endl;
+    stream << totalFloats << " floats." << endl;
     for (int i = 0; i < totalFloats; ++i)
-      cout << totalData[i] << ' ';
-    cout << endl;
+      stream << totalData[i] << ' ';
+    stream << endl;
   }
 }

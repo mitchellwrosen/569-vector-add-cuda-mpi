@@ -1,17 +1,22 @@
 #ifndef SRC_FLOAT_VECTOR_H_
 #define SRC_FLOAT_VECTOR_H_
 
+#include <iostream>
+
 #define MIN_VAL -20.0
 #define MAX_VAL 20.0
 #define NUM_BINS 80
 #define BIN_WIDTH 0.50
+
+using std::ostream;
 
 /**
  * A distributed float vector, with operations that utilize MPI and/or CUDA.
  */
 class FloatVector {
  public:
-  FloatVector(const char* filename);
+  explicit FloatVector(const char* filename);
+  virtual ~FloatVector();
 
   static FloatVector* sum(const FloatVector* vec1, const FloatVector* vec2);
 
@@ -22,6 +27,7 @@ class FloatVector {
   int* histogram();
 
   void debugPrint();
+  void debugPrint(const char* filename);
 
   // Getters.
   const char* filename() const { return filename_; }
@@ -32,6 +38,7 @@ class FloatVector {
   FloatVector(float* data, int len);
 
   int getBinNum(float val);
+  void debugPrint(ostream& stream);
 
   const char* filename_;
   float* data_;

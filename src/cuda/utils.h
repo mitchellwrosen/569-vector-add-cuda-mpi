@@ -4,7 +4,7 @@
 #define CUDA_CHECK(call) \
   if ((call) != cudaSuccess) { \
     cudaError_t err = cudaGetLastError(); \
-    std::cerr << "CUDA error calling \""#call"\", code is " << err << std::endl; \
+    fprintf(stderr, "CUDA error calling \""#call"\", code is %d\n", cudaGetLastError()); \
     mpiAbort(err); }
 
 #endif  // SRC_CUDA_UTILS_H_

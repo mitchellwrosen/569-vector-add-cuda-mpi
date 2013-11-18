@@ -3,7 +3,7 @@
 
 #define MPI_CHECK(call) \
   if ((call) != MPI_SUCCESS) { \
-    std::cerr << "MPI error calling \""#call"\"\n"; \
+    fprintf(stderr, "MPI error calling \""#call"\"\n"); \
     mpiAbort(-1); \
   }
 

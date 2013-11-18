@@ -1,17 +1,22 @@
+###############################################################################
+# C++ / MPI                                                                   #
+###############################################################################
 CC=mpic++
-NVCC=nvcc
+
 CFLAGS=-Wall -O3
 LDFLAGS=-Wall
 
-###############################################################################
-# Source                                                                      #
-###############################################################################
 MAIN=main.o
-
 SRCS=$(filter-out src/cuda/*.cpp, $(wildcard src/*.cpp src/**/*.cpp))
 OBJS=$(patsubst %.cpp,%.o,$(SRCS))
 INC=-Isrc
 LIBS=-lmpi
+
+###############################################################################
+# CUDA                                                                        #
+###############################################################################
+CUDA_CC=nvcc
+CUDA_CFLAGS=-O3
 
 CUDA_SRCS=$(wildcard src/cuda/*.cu)
 CUDA_OBJS=$(patsubst %.cu,%.o,$(CUDA_SRCS))
@@ -24,15 +29,12 @@ all: makeDirectories $(OBJS) $(CUDA_OBJS) $(MAIN)
 	$(CC) $(LDFLAGS) $(INC) $(CUDA_INC) $(OBJS) $(CUDA_OBJS) $(MAIN) $(LIBS) $(CUDA_LIBS) -o bin/main
 
 encode:
-	ghc -O2 ./Encode.hs -o encode
+	$(CC)
 
-$(CUDA_OBJS): %.o : %.cu %.h
-	$(NVCC) $(INC) $(CUDA_INC) -O3 -c $< -o $@
+$(CUDA_OBJS): %.o : %.cu
+	$(CUDA_CC) $(INC) $(CUDA_INC) $(CUDA_CFLAGS) -c $< -o $@
 
-$(OBJS): %.o : %.cpp %.h
-	$(CC) $(INC) $(CFLAGS) -c $< -o $@
-
-%.o : %.cpp
+$(OBJS) $(MAIN): %.o : %.cpp
 	$(CC) $(INC) $(CFLAGS) -c $< -o $@
 
 .PHONY: makeDirectories
@@ -40,4 +42,4 @@ makeDirectories:
 	@mkdir -p bin
 
 clean:
-	@rm -f $(OBJS) $(TEST_OBJS)
+	@rm -f $(OBJS) $(CUDA_OBJS)

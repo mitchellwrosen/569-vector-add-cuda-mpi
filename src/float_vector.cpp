@@ -53,7 +53,7 @@ FloatVector* FloatVector::sum(const FloatVector* vec1, const FloatVector* vec2) 
 
   boost::timer timer;
   cudaVectorAdd(vec1->data(), vec2->data(), chunkSum, floatsPerNode);
-  fprintf(stderr, "Summed %d floats on node %d (%lf seconds)\n", floatsPerNode, context->rank, timer.elapsed());
+  fprintf(stderr, "Summed %d floats on node %d (%0.1lf seconds)\n", floatsPerNode, context->rank, timer.elapsed());
 
   return new FloatVector(chunkSum, floatsPerNode);
 }
@@ -92,7 +92,7 @@ void FloatVector::debugPrint(const char* filename) {
 void FloatVector::debugPrint(ostream& stream) {
   int totalFloats = len_ * context->size;
 
-  float* totalData;
+  float* totalData = NULL;
   if (context->isRoot())
     totalData = new float[totalFloats];
 

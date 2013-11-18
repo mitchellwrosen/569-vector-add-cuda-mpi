@@ -1,6 +1,6 @@
 #include "cuda/vector_add.h"
 
-#include <iostream>
+#include <cstdio>
 
 #include "cuda/utils.h"
 #include "mpi/utils.h"

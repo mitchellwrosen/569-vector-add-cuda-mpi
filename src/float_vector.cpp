@@ -1,5 +1,6 @@
 #include "float_vector.h"
 
+#include <boost/scoped_ptr.hpp>
 #include <boost/timer.hpp>
 #include <cstring>
 #include <iostream>
@@ -10,7 +11,12 @@
 #include "mpi/context.h"
 #include "mpi/utils.h"
 
-using namespace std;
+using std::cout;
+using std::endl;
+using std::ifstream;
+using std::ios;
+using std::ofstream;
+using boost::scoped_ptr;
 
 extern MpiContext* context;
 
@@ -58,6 +64,18 @@ FloatVector* FloatVector::sum(const FloatVector* vec1, const FloatVector* vec2) 
   return new FloatVector(chunkSum, floatsPerNode);
 }
 
+FloatVector* FloatVector::sum(const char* vecfile1, const char* vecfile2) {
+  boost::timer timer;
+  scoped_ptr<FloatVector> vec1(new FloatVector(vecfile1));
+  fprintf(stderr, "Read %d floats from %s on node %d (%0.1lf seconds)\n", vec1->len(), vecfile1, context->rank, timer.elapsed());
+
+  timer.restart();
+  scoped_ptr<FloatVector> vec2(new FloatVector(vecfile2));
+  fprintf(stderr, "Read %d floats from %s on node %d (%0.1lf seconds)\n", vec2->len(), vecfile2, context->rank, timer.elapsed());
+
+  return FloatVector::sum(vec1.get(), vec2.get());
+}
+
 int* FloatVector::histogram() {
   int* localBins = new int[NUM_BINS]();
 
@@ -68,7 +86,7 @@ int* FloatVector::histogram() {
   if (context->isRoot())
     histogram = new int[NUM_BINS]();
 
-  MPI_CHECK(MPI_Reduce(localBins, histogram, NUM_BINS, MPI_INT, MPI_SUM, context->root, context->comm));
+  context->reduce(localBins, histogram, NUM_BINS, MPI_INT, MPI_SUM);
   delete[] localBins;
   return histogram;
 }
@@ -96,7 +114,7 @@ void FloatVector::debugPrint(ostream& stream) {
   if (context->isRoot())
     totalData = new float[totalFloats];
 
-  MPI_CHECK(MPI_Gather(data_, len_, MPI_FLOAT, totalData, len_, MPI_FLOAT, context->root, context->comm));
+  context->gather(data_, len_, MPI_FLOAT, totalData, len_, MPI_FLOAT);
 
   if (context->isRoot()) {
     stream << totalFloats << " floats." << endl;

@@ -1,8 +1,8 @@
+#include <boost/scoped_ptr.hpp>
 #include <boost/timer.hpp>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
-#include <iostream>
 #include <mpi.h>
 #include <vector>
 
@@ -10,38 +10,24 @@
 #include "mpi/context.h"
 #include "mpi/utils.h"
 
-using namespace std;
+using boost::scoped_ptr;
+using std::endl;
 
 void printUsage();
 void writeHistogram(FloatVector* vec, const char* filename);
 
-MpiContext* context;
+scoped_ptr<MpiContext> context;
 
 int main(int argc, char** argv) {
   if (argc != 3)
     printUsage();
 
-  boost::timer timer;
+  context.reset(new MpiContext(&argc, &argv, 0, MPI_COMM_WORLD));
 
-  context = new MpiContext(&argc, &argv, 0, MPI_COMM_WORLD);
-
-  FloatVector* vec1 = new FloatVector(argv[1]);
-  fprintf(stderr, "Read %d floats from %s on node %d (%0.1lf seconds)\n", vec1->len(), argv[1], context->rank, timer.elapsed());
-
-  timer.restart();
-  FloatVector* vec2 = new FloatVector(argv[2]);
-  fprintf(stderr, "Read %d floats from %s on node %d (%0.1lf seconds)\n", vec2->len(), argv[2], context->rank, timer.elapsed());
-
-  FloatVector* vec3 = FloatVector::sum(vec1, vec2);
-
-  delete vec1;
-  delete vec2;
-
-  writeHistogram(vec3, "hist.c");
+  scoped_ptr<FloatVector> vec(FloatVector::sum(argv[1], argv[2]));
+  writeHistogram(vec.get(), "hist.c");
 
   context->finalize();
-
-  delete context;
   return 0;
 }
 
@@ -54,10 +40,10 @@ void writeHistogram(FloatVector* vec, const char* filename) {
   int* histogram = vec->histogram();
 
   if (context->isRoot()) {
-    ofstream histogramFile(filename);
+    FILE* histogramFile = fopen(filename, "w");
     for (int i = 0; i < NUM_BINS; ++i)
-      histogramFile << i << "," << histogram[i] << endl;
-    histogramFile.close();
+      fprintf(histogramFile, "%d,%d\n", i, histogram[i]);
+    fclose(histogramFile);
     fprintf(stderr, "Output \"%s\"\n", filename);
   }
 }

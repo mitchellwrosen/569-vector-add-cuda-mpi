@@ -16,7 +16,7 @@ LIBS=-lmpi
 # CUDA                                                                        #
 ###############################################################################
 CUDA_CC=nvcc
-CUDA_CFLAGS=-O3
+CUDA_CFLAGS=-O3 -DTHREADS_PER_BLOCK=1024
 
 CUDA_SRCS=$(wildcard src/cuda/*.cu)
 CUDA_OBJS=$(patsubst %.cu,%.o,$(CUDA_SRCS))

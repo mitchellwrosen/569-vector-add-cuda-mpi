@@ -12,20 +12,35 @@ using std::ostream;
 
 /**
  * A distributed float vector, with operations that utilize MPI and/or CUDA.
+ * Some functions only return sensible values on the root node, although these
+ * functions should still be called by all nodes (i.e. not inside an if-guard).
  */
 class FloatVector {
  public:
+  /**
+   * Create a distributed vector from a binary-encoded file (first integer is
+   * the number of floats, 32-bit little endian, followed by the floats).
+   */
   explicit FloatVector(const char* filename);
   virtual ~FloatVector();
 
+  /**
+   * Sum two distributed vectors, either from vectors or vector files. The
+   * summed vector is also distributed.
+   */
   static FloatVector* sum(const FloatVector* vec1, const FloatVector* vec2);
+  static FloatVector* sum(const char* vecfile1, const char* vecfile2);
 
   /**
-   * Creates a histogram from this vector. The returned histogram is only
-   * meaningful on the root process - all others will return NULL.
+   * Creates a histogram from this vector, with min/max/width constants defined
+   * at compile time inside this file. The returned histogram is only meaningful
+   * on the root process - all others will return NULL.
    */
   int* histogram();
 
+  /**
+   * Print the contents of this vector to stdout, or to the specified file.
+   */
   void debugPrint();
   void debugPrint(const char* filename);
 

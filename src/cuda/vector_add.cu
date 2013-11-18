@@ -5,8 +5,6 @@
 #include "cuda/utils.h"
 #include "mpi/utils.h"
 
-#define THREADS_PER_BLOCK 512
-
 __global__ void vectorAdd(float *Md, float *Nd, float *Pd, int width);
 
 void cudaVectorAdd(float* chunk1, float* chunk2, float* chunkSum, int floatsPerNode) {

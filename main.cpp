@@ -52,10 +52,11 @@ void printUsage() {
 
 void writeHistogram(FloatVector* vec, const char* filename) {
   int* histogram = vec->histogram();
+
   if (context->isRoot()) {
     ofstream histogramFile(filename);
     for (int i = 0; i < NUM_BINS; ++i)
-      histogramFile << histogram[i] << endl;
+      histogramFile << i << "," << histogram[i] << endl;
     histogramFile.close();
     fprintf(stderr, "Output \"%s\"\n", filename);
   }

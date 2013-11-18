@@ -1,0 +1,4 @@
+To make:
+   make all
+
+Executable is located at ./bin/vectoradd

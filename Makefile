@@ -6,7 +6,7 @@ CC=mpic++
 CFLAGS=-Wall -O3
 LDFLAGS=-Wall
 
-MAIN=main.o
+MAIN=vectoradd.o
 SRCS=$(filter-out src/cuda/*.cpp, $(wildcard src/*.cpp src/**/*.cpp))
 OBJS=$(patsubst %.cpp,%.o,$(SRCS))
 INC=-Isrc
@@ -26,7 +26,7 @@ CUDA_LIBS=-L/usr/local/cuda/lib64 -lcudart
 ###############################################################################
 
 all: makeDirectories $(OBJS) $(CUDA_OBJS) $(MAIN)
-	$(CC) $(LDFLAGS) $(INC) $(CUDA_INC) $(OBJS) $(CUDA_OBJS) $(MAIN) $(LIBS) $(CUDA_LIBS) -o bin/main
+	$(CC) $(LDFLAGS) $(INC) $(CUDA_INC) $(OBJS) $(CUDA_OBJS) $(MAIN) $(LIBS) $(CUDA_LIBS) -o bin/vectoradd
 
 encode:
 	$(CC)
@@ -42,4 +42,5 @@ makeDirectories:
 	@mkdir -p bin
 
 clean:
-	@rm -f $(OBJS) $(CUDA_OBJS)
+	@rm -f $(OBJS) $(MAIN) $(CUDA_OBJS)
+	@rm -rf bin

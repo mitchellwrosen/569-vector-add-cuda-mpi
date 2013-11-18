@@ -42,7 +42,7 @@ void writeHistogram(FloatVector* vec, const char* filename) {
   if (context->isRoot()) {
     FILE* histogramFile = fopen(filename, "w");
     for (int i = 0; i < NUM_BINS; ++i)
-      fprintf(histogramFile, "%d,%d\n", i, histogram[i]);
+      fprintf(histogramFile, "%d, %d\n", i, histogram[i]);
     fclose(histogramFile);
     fprintf(stderr, "Output \"%s\"\n", filename);
   }

@@ -23,6 +23,6 @@ void MpiContext::reduce(void* sendbuf, void* recvbuf, int count, MPI_Datatype da
   MPI_CHECK(MPI_Reduce(sendbuf, recvbuf, count, datatype, op, root, comm));
 }
 
-void gather(void* sendbuf, int sendcnt, MPI_Datatype sendtype, void* recvbuf, int recvcnt, MPI_Datatype recvtype) {
-  MPI_CHECK(MPI_Gather(data_, len_, MPI_FLOAT, totalData, len_, MPI_FLOAT, root, comm));
+void MpiContext::gather(void* sendbuf, int sendcnt, MPI_Datatype sendtype, void* recvbuf, int recvcnt, MPI_Datatype recvtype) {
+  MPI_CHECK(MPI_Gather(sendbuf, sendcnt, sendtype, recvbuf, recvcnt, recvtype, root, comm));
 }

@@ -28,8 +28,8 @@ class FloatVector {
    * Sum two distributed vectors, either from vectors or vector files. The
    * summed vector is also distributed.
    */
-  static FloatVector* sum(const FloatVector* vec1, const FloatVector* vec2);
   static FloatVector* sum(const char* vecfile1, const char* vecfile2);
+  static FloatVector* sum(const FloatVector* vec1, const FloatVector* vec2);
 
   /**
    * Creates a histogram from this vector, with min/max/width constants defined

@@ -25,7 +25,13 @@ CUDA_LIBS=-L/usr/local/cuda/lib64 -lcudart
 
 ###############################################################################
 
-all: makeDirectories $(OBJS) $(CUDA_OBJS) $(MAIN)
+all: vectoradd
+
+debug: CC += -DDEBUG
+debug: CUDA_CC += -DDEBUG
+debug: vectoradd
+
+vectoradd: makeDirectories $(OBJS) $(CUDA_OBJS) $(MAIN)
 	$(CC) $(LDFLAGS) $(INC) $(CUDA_INC) $(OBJS) $(CUDA_OBJS) $(MAIN) $(LIBS) $(CUDA_LIBS) -o bin/vectoradd
 
 encode:

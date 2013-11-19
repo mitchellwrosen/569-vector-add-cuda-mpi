@@ -1,15 +1,16 @@
 #include "float_vector.h"
 
 #include <boost/scoped_ptr.hpp>
-#include <boost/timer.hpp>
 #include <cstring>
 #include <iostream>
 #include <fstream>
 #include <mpi.h>
 
 #include "cuda/vector_add.h"
+#include "logging.h"
 #include "mpi/context.h"
 #include "mpi/utils.h"
+#include "timer.h"
 
 using std::cout;
 using std::endl;
@@ -47,6 +48,22 @@ FloatVector::~FloatVector() {
     delete[] data_;
 }
 
+FloatVector* FloatVector::sum(const char* vecfile1, const char* vecfile2) {
+  scoped_ptr<FloatVector> vec1;
+  TIME(
+      vec1.reset(new FloatVector(vecfile1)),
+      "Read %d floats from %s", vec1->len(), vecfile1
+  );
+
+  scoped_ptr<FloatVector> vec2;
+  TIME(
+      vec2.reset(new FloatVector(vecfile2)),
+      "Read %d floats from %s", vec2->len(), vecfile2
+  );
+
+  return FloatVector::sum(vec1.get(), vec2.get());
+}
+
 FloatVector* FloatVector::sum(const FloatVector* vec1, const FloatVector* vec2) {
   if (vec1->len() != vec2->len()) {
     fprintf(stderr, "Unequal vector lengths: %d (%s), %d (%s)\n",
@@ -57,23 +74,12 @@ FloatVector* FloatVector::sum(const FloatVector* vec1, const FloatVector* vec2) 
   int floatsPerNode = vec1->len();
   float* chunkSum = new float[floatsPerNode];
 
-  boost::timer timer;
-  cudaVectorAdd(vec1->data(), vec2->data(), chunkSum, floatsPerNode);
-  fprintf(stderr, "Summed %d floats on node %d (%0.1lf seconds)\n", floatsPerNode, context->rank, timer.elapsed());
+  TIME(
+      cudaVectorAdd(vec1->data(), vec2->data(), chunkSum, floatsPerNode),
+      "Summed %d floats", floatsPerNode
+  );
 
   return new FloatVector(chunkSum, floatsPerNode);
-}
-
-FloatVector* FloatVector::sum(const char* vecfile1, const char* vecfile2) {
-  boost::timer timer;
-  scoped_ptr<FloatVector> vec1(new FloatVector(vecfile1));
-  fprintf(stderr, "Read %d floats from %s on node %d (%0.1lf seconds)\n", vec1->len(), vecfile1, context->rank, timer.elapsed());
-
-  timer.restart();
-  scoped_ptr<FloatVector> vec2(new FloatVector(vecfile2));
-  fprintf(stderr, "Read %d floats from %s on node %d (%0.1lf seconds)\n", vec2->len(), vecfile2, context->rank, timer.elapsed());
-
-  return FloatVector::sum(vec1.get(), vec2.get());
 }
 
 int* FloatVector::histogram() {

@@ -1,5 +1,4 @@
 #include <boost/scoped_ptr.hpp>
-#include <boost/timer.hpp>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
@@ -7,8 +6,10 @@
 #include <vector>
 
 #include "float_vector.h"
+#include "logging.h"
 #include "mpi/context.h"
 #include "mpi/utils.h"
+#include "timer.h"
 
 using boost::scoped_ptr;
 using std::endl;
@@ -22,12 +23,16 @@ int main(int argc, char** argv) {
   if (argc != 3)
     printUsage();
 
-  context.reset(new MpiContext(&argc, &argv, 0, MPI_COMM_WORLD));
+  TIME(
+      context.reset(new MpiContext(&argc, &argv, 0, MPI_COMM_WORLD)),
+      "MPI initialized"
+  );
 
   scoped_ptr<FloatVector> vec(FloatVector::sum(argv[1], argv[2]));
   writeHistogram(vec.get(), "hist.c");
 
   context->finalize();
+
   return 0;
 }
 
@@ -44,6 +49,6 @@ void writeHistogram(FloatVector* vec, const char* filename) {
     for (int i = 0; i < NUM_BINS; ++i)
       fprintf(histogramFile, "%d, %d\n", i, histogram[i]);
     fclose(histogramFile);
-    fprintf(stderr, "Output \"%s\"\n", filename);
+    LOG("Output \"%s\"\n", filename);
   }
 }
